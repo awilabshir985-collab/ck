@@ -13,7 +13,11 @@ namespace BeeciyeMarket.Data
             var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
             var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
-            await context.Database.MigrateAsync();
+            // Migrations are SQL Server-specific; on PostgreSQL build the schema straight from the model
+            if (context.Database.IsNpgsql())
+                await context.Database.EnsureCreatedAsync();
+            else
+                await context.Database.MigrateAsync();
 
             // 1. Roles
             foreach (var role in new[] { Roles.Admin, Roles.User })

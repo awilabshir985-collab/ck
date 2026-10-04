@@ -13,8 +13,20 @@ builder.Services.AddControllersWithViews();
 // Database
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+// SQL Server locally; PostgreSQL when DatabaseProvider=Postgres (Railway free hosting)
+var usePostgres = string.Equals(builder.Configuration["DatabaseProvider"], "Postgres", StringComparison.OrdinalIgnoreCase);
+if (usePostgres)
+{
+    // Allow DateTime.Now (Kind=Local) values, as the app uses with SQL Server
+    AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+}
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString));
+{
+    if (usePostgres)
+        options.UseNpgsql(connectionString);
+    else
+        options.UseSqlServer(connectionString);
+});
 
 // Identity + Roles
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>

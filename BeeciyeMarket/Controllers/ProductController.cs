@@ -39,7 +39,9 @@ namespace BeeciyeMarket.Controllers
 
             if (!string.IsNullOrWhiteSpace(search))
             {
-                query = query.Where(p => p.Name.Contains(search) || (p.Description != null && p.Description.Contains(search)));
+                // ToLower keeps search case-insensitive on PostgreSQL too
+                var term = search.ToLower();
+                query = query.Where(p => p.Name.ToLower().Contains(term) || (p.Description != null && p.Description.ToLower().Contains(term)));
             }
 
             if (categoryId.HasValue)
