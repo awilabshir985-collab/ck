@@ -1,6 +1,7 @@
 using BeeciyeMarket.Data;
 using BeeciyeMarket.Models;
 using BeeciyeMarket.Services;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -34,7 +35,17 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.AccessDeniedPath = "/Account/AccessDenied";
 });
 
+// Behind Railway's proxy: trust X-Forwarded-Proto/For so HTTPS is detected correctly
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 var app = builder.Build();
+
+app.UseForwardedHeaders();
 
 // Seed database: applies migrations, creates roles/admin/categories/sample data.
 await DbInitializer.SeedAsync(app.Services);
