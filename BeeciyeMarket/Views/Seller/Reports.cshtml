@@ -1,0 +1,80 @@
+@model BeeciyeMarket.Models.ViewModels.ReportViewModel
+@{
+    ViewData["Title"] = "Sales Reports";
+    Layout = "_DashboardLayout";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">Sales Reports</h1>
+    <form asp-controller="Seller" asp-action="Reports" method="get" class="d-flex gap-2">
+        <input type="date" name="startDate" value="@Model.StartDate.ToString("yyyy-MM-dd")" class="form-control form-control-sm" />
+        <input type="date" name="endDate" value="@Model.EndDate.ToString("yyyy-MM-dd")" class="form-control form-control-sm" />
+        <button type="submit" class="btn btn-sm btn-beeciye-gold">Generate</button>
+    </form>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card beeciye-stat-card">
+            <div class="card-body">
+                <h3 class="mb-0">$@Model.TotalSales.ToString("0.00")</h3>
+                <small class="text-muted">Total Sales</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card beeciye-stat-card">
+            <div class="card-body">
+                <h3 class="mb-0">@Model.TotalOrders</h3>
+                <small class="text-muted">Total Orders</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card beeciye-stat-card">
+            <div class="card-body">
+                <h3 class="mb-0">$@Model.TotalProfit.ToString("0.00")</h3>
+                <small class="text-muted">Total Revenue</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <h6 class="card-title">Sales Over Time</h6>
+        @if (!Model.MonthlySales.Any())
+        {
+            <p class="text-muted">No sales in this date range.</p>
+        }
+        else
+        {
+            <canvas id="salesChart" height="90"></canvas>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    @if (Model.MonthlySales.Any())
+    {
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+        <script>
+            const ctx = document.getElementById('salesChart');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlySales.Select(m => m.Label))),
+                    datasets: [{
+                        label: 'Sales ($)',
+                        data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlySales.Select(m => m.Amount))),
+                        backgroundColor: '#f5b301'
+                    }]
+                },
+                options: {
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        </script>
+    }
+}

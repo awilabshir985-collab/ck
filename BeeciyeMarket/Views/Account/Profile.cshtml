@@ -1,0 +1,66 @@
+@model BeeciyeMarket.Models.ApplicationUser
+@{
+    ViewData["Title"] = "My Profile";
+    Layout = "_DashboardLayout";
+    ViewBag.ActiveNav = "Profile";
+}
+
+<h1 class="mb-4">My Profile</h1>
+
+@if (ViewBag.Saved == true)
+{
+    <div class="alert alert-success">Profile updated.</div>
+}
+
+<div class="card col-md-6">
+    <div class="card-body">
+        <form asp-controller="Account" asp-action="Profile" method="post" enctype="multipart/form-data">
+            <div class="mb-4 text-center">
+                <label class="beeciye-avatar-uploader" for="profileImageInput" title="Change photo">
+                    <img id="profileImagePreview"
+                         src="@(string.IsNullOrEmpty(Model.ProfileImagePath) ? "/images/products/no-image.svg" : Model.ProfileImagePath)"
+                         alt="Profile picture" />
+                    <span class="avatar-edit-btn"><i class="bi bi-camera-fill"></i></span>
+                </label>
+                <input id="profileImageInput" class="d-none" type="file" name="profileImage" accept="image/*" onchange="previewProfileImage(this)" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input type="text" class="form-control" value="@Model.Email" disabled />
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="FullName" class="form-label"></label>
+                <input asp-for="FullName" class="form-control" />
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="PhoneNumber" class="form-label"></label>
+                <input asp-for="PhoneNumber" class="form-control" />
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="City" class="form-label"></label>
+                <input asp-for="City" class="form-control" />
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Address" class="form-label"></label>
+                <input asp-for="Address" class="form-control" />
+            </div>
+
+            <button type="submit" class="btn btn-beeciye-gold">Save Changes</button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function previewProfileImage(input) {
+            if (input.files && input.files[0]) {
+                document.getElementById('profileImagePreview').src = URL.createObjectURL(input.files[0]);
+            }
+        }
+    </script>
+}

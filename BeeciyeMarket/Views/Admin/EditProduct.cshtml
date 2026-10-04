@@ -1,0 +1,100 @@
+@model BeeciyeMarket.Models.Product
+@{
+    ViewData["Title"] = "Edit Product";
+    Layout = "_DashboardLayout";
+    ViewBag.ActiveNav = "Products";
+}
+
+<h1 class="mb-4">Edit Product</h1>
+<p class="text-muted">Seller: @Model.Seller?.FullName</p>
+
+<form asp-controller="Admin" asp-action="EditProduct" asp-route-id="@Model.Id" method="post" enctype="multipart/form-data">
+    <input type="hidden" asp-for="Id" />
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+    <div class="row g-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Name" class="form-label"></label>
+                            <input asp-for="Name" class="form-control" />
+                            <span asp-validation-for="Name" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="CategoryId" class="form-label">Category</label>
+                            <select asp-for="CategoryId" class="form-select" asp-items="@(new SelectList(ViewBag.Categories, "Id", "Name", Model.CategoryId))"></select>
+                            <span asp-validation-for="CategoryId" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Price" class="form-label">Total Price (for the quantity below)</label>
+                            <input asp-for="Price" class="form-control" />
+                            <span asp-validation-for="Price" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Quantity" class="form-label"></label>
+                            <input asp-for="Quantity" class="form-control" />
+                            <span asp-validation-for="Quantity" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Condition" class="form-label"></label>
+                            <select asp-for="Condition" class="form-select" asp-items="Html.GetEnumSelectList<BeeciyeMarket.Models.ProductCondition>()"></select>
+                        </div>
+                        <div class="col-md-6 mb-3 form-check pt-4">
+                            <input asp-for="IsActive" class="form-check-input" />
+                            <label asp-for="IsActive" class="form-check-label"></label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Description" class="form-label"></label>
+                        <textarea asp-for="Description" class="form-control" rows="4"></textarea>
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+                    <button type="submit" class="btn btn-beeciye-gold">Save Changes</button>
+                    <a asp-controller="Admin" asp-action="Products" class="btn btn-link">Cancel</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <img id="imagePreview" src="@(string.IsNullOrEmpty(Model.ImagePath) ? "/images/products/no-image.svg" : Model.ImagePath)" class="img-fluid rounded mb-2" style="width:100%;aspect-ratio:1;object-fit:cover;" />
+                    <label for="imageFileInput" class="btn btn-primary w-100">Change Image</label>
+                    <input asp-for="ImageFile" id="imageFileInput" type="file" class="d-none" accept="image/*" onchange="previewImage(this)" />
+
+                    @if (Model.Images.Any())
+                    {
+                        <hr />
+                        <p class="text-start small text-muted mb-2">Other photos</p>
+                        <div class="d-flex flex-wrap gap-2 mb-2">
+                            @foreach (var img in Model.Images)
+                            {
+                                <div class="position-relative">
+                                    <img src="@img.ImagePath" class="rounded" style="width:56px;height:56px;object-fit:cover;" />
+                                    <form asp-controller="Admin" asp-action="DeleteProductImage" asp-route-id="@img.Id" method="post" class="position-absolute top-0 end-0">
+                                        <button type="submit" class="btn btn-danger btn-sm p-0" style="width:18px;height:18px;line-height:1;font-size:0.65rem;" title="Remove photo">&times;</button>
+                                    </form>
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    <label asp-for="ImageFiles" class="form-label d-block text-start small text-muted mt-2">Add more photos</label>
+                    <input asp-for="ImageFiles" type="file" class="form-control" accept="image/*" multiple />
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                document.getElementById('imagePreview').src = URL.createObjectURL(input.files[0]);
+            }
+        }
+    </script>
+}

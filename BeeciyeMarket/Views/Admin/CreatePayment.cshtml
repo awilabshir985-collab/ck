@@ -1,0 +1,77 @@
+@{
+    ViewData["Title"] = "Add Payment";
+    Layout = "_DashboardLayout";
+    ViewBag.ActiveNav = "Payments";
+    var orders = (List<BeeciyeMarket.Models.Order>)ViewBag.Orders;
+}
+
+<h1 class="mb-4">Add Payment</h1>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+<form asp-controller="Admin" asp-action="CreatePayment" method="post" class="col-md-6">
+    @if (!orders.Any())
+    {
+        <p class="text-muted">There are no orders yet.</p>
+    }
+    else
+    {
+        <div class="mb-3">
+            <label class="form-label">Order</label>
+            <select name="orderId" class="form-select" required onchange="fillAmount(this)">
+                <option value="">Select order</option>
+                @foreach (var order in orders)
+                {
+                    var paid = order.Payments.Where(p => p.Status == BeeciyeMarket.Models.PaymentStatus.Paid).Sum(p => p.Amount);
+                    var remaining = order.TotalPrice - paid;
+                    <option value="@order.Id" data-amount="@remaining.ToString("0.00")">
+                        #@order.Id - @(order.Customer?.FullName ?? order.ShippingFullName) - $@order.TotalPrice.ToString("0.00") total
+                        @(order.Payments.Any() ? $"(${paid:0.00} paid so far)" : "(no payments yet)")
+                    </option>
+                }
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Amount</label>
+            <input type="text" name="amount" id="amountInput" class="form-control" required />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Payment Method</label>
+            <select name="paymentMethod" class="form-select">
+                <option value="CashOnDelivery">Mobile Payment on Delivery</option>
+                <option value="MobileMoney">Mobile Money</option>
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Status</label>
+            <select name="status" class="form-select">
+                <option value="Pending">Pending</option>
+                <option value="Paid">Paid</option>
+                <option value="Failed">Failed</option>
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Transaction Reference (optional)</label>
+            <input type="text" name="transactionReference" class="form-control" />
+        </div>
+
+        <button type="submit" class="btn btn-beeciye-gold">Save Payment</button>
+    }
+    <a asp-controller="Admin" asp-action="Payments" class="btn btn-link">Cancel</a>
+</form>
+
+@section Scripts {
+    <script>
+        function fillAmount(select) {
+            const option = select.options[select.selectedIndex];
+            document.getElementById('amountInput').value = option.dataset.amount || '';
+        }
+    </script>
+}

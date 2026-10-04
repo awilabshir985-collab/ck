@@ -1,0 +1,27 @@
+@model BeeciyeMarket.Models.Category
+@{
+    ViewData["Title"] = "Edit Category";
+    Layout = "_DashboardLayout";
+}
+
+<h1 class="mb-4">Edit Category</h1>
+
+<form asp-controller="Admin" asp-action="EditCategory" asp-route-id="@Model.Id" method="post" class="col-md-6">
+    <div class="mb-3">
+        <label asp-for="Name" class="form-label"></label>
+        <input asp-for="Name" class="form-control" required />
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Description" class="form-label"></label>
+        <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="IconClass" class="form-label">Icon class (Bootstrap Icons)</label>
+        <input asp-for="IconClass" class="form-control" placeholder="bi bi-tag" />
+    </div>
+
+    <button type="submit" class="btn btn-beeciye-gold">Save Changes</button>
+    <a asp-controller="Admin" asp-action="Categories" class="btn btn-link">Cancel</a>
+</form>

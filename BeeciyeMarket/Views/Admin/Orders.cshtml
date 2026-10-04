@@ -1,0 +1,48 @@
+@model List<BeeciyeMarket.Models.Order>
+@{
+    ViewData["Title"] = "Manage Orders";
+    Layout = "_DashboardLayout";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">Manage Orders</h1>
+    <a asp-controller="Admin" asp-action="CreateOrder" class="btn btn-beeciye-gold"><i class="bi bi-plus-circle"></i> Add Order</a>
+</div>
+
+<div class="card">
+    <table class="table align-middle mb-0">
+        <thead>
+            <tr>
+                <th>Order #</th>
+                <th>Customer</th>
+                <th>Date</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var order in Model)
+            {
+                <tr>
+                    <td><a asp-controller="Admin" asp-action="OrderDetails" asp-route-id="@order.Id">#@order.Id</a></td>
+                    <td>@(order.Customer?.FullName ?? order.ShippingFullName) @(order.Customer == null ? "(Guest)" : "")</td>
+                    <td>@order.OrderDate.ToString("MMM d, yyyy")</td>
+                    <td>$@order.TotalPrice.ToString("0.00")</td>
+                    <td><span class="badge badge-status-@order.Status.ToString().ToLower()">@order.Status</span></td>
+                    <td>
+                        <form asp-controller="Admin" asp-action="UpdateOrderStatus" asp-route-id="@order.Id" method="post" class="d-flex gap-1">
+                            <select name="status" class="form-select form-select-sm" style="width:140px;">
+                                @foreach (var status in Enum.GetValues<BeeciyeMarket.Models.OrderStatus>())
+                                {
+                                    <option value="@status" selected="@(status == order.Status)">@status</option>
+                                }
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-outline-primary">Update</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

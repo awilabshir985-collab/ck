@@ -1,0 +1,46 @@
+@model BeeciyeMarket.ViewComponents.NotificationBellViewModel
+@using BeeciyeMarket.Models
+
+<div class="dropdown beeciye-notif">
+    <button class="btn beeciye-notif-btn position-relative" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="Notifications">
+        <i class="bi bi-bell"></i>
+        <span class="badge rounded-pill bg-danger beeciye-notif-badge @(Model.UnreadCount == 0 ? "d-none" : "")" data-notif-count>
+            @(Model.UnreadCount > 99 ? "99+" : Model.UnreadCount.ToString())
+        </span>
+    </button>
+    <div class="dropdown-menu dropdown-menu-end shadow beeciye-notif-menu p-0">
+        <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+            <strong>Notifications</strong>
+            @if (Model.UnreadCount > 0)
+            {
+                <form asp-controller="Notification" asp-action="MarkAllAsRead" method="post" class="m-0">
+                    <button type="submit" class="btn btn-link btn-sm p-0 text-decoration-none">Mark all as read</button>
+                </form>
+            }
+        </div>
+        @if (!Model.Recent.Any())
+        {
+            <div class="text-center text-muted py-4 small">
+                <i class="bi bi-bell-slash fs-4 d-block mb-1"></i>
+                No notifications yet
+            </div>
+        }
+        else
+        {
+            <div class="beeciye-notif-list">
+                @foreach (var n in Model.Recent)
+                {
+                    <a class="dropdown-item beeciye-notif-item @(n.IsRead ? "" : "unread")" asp-controller="Notification" asp-action="Open" asp-route-id="@n.Id">
+                        <span class="beeciye-notif-icon"><i class="bi @n.Type.ToIconClass()"></i></span>
+                        <span class="flex-grow-1 overflow-hidden">
+                            <span class="d-block fw-semibold text-truncate">@n.Title</span>
+                            <span class="d-block small text-muted beeciye-notif-msg">@n.Message</span>
+                            <span class="d-block small text-muted">@n.CreatedAt.ToString("MMM d, h:mm tt")</span>
+                        </span>
+                    </a>
+                }
+            </div>
+        }
+        <a class="d-block text-center py-2 border-top small text-decoration-none" asp-controller="Notification" asp-action="Index">View all notifications</a>
+    </div>
+</div>

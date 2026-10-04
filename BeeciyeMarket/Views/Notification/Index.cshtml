@@ -1,0 +1,71 @@
+@model List<BeeciyeMarket.Models.Notification>
+@using BeeciyeMarket.Models
+@{
+    ViewData["Title"] = "Notifications";
+    Layout = "_DashboardLayout";
+    bool unreadOnly = ViewBag.UnreadOnly ?? false;
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <h1 class="mb-0">Notifications</h1>
+    <div class="d-flex gap-2">
+        <form asp-action="MarkAllAsRead" method="post">
+            <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-check2-all"></i> Mark all as read</button>
+        </form>
+        <form asp-action="ClearRead" method="post" onsubmit="return confirm('Delete all read notifications?');">
+            <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> Clear read</button>
+        </form>
+    </div>
+</div>
+
+<ul class="nav nav-tabs mb-3">
+    <li class="nav-item"><a class="nav-link @(!unreadOnly ? "active" : "")" asp-action="Index">All</a></li>
+    <li class="nav-item"><a class="nav-link @(unreadOnly ? "active" : "")" asp-action="Index" asp-route-unreadOnly="true">Unread</a></li>
+</ul>
+
+@if (!Model.Any())
+{
+    <div class="card">
+        <div class="card-body text-center text-muted py-5">
+            <i class="bi bi-bell-slash fs-1 d-block mb-2"></i>
+            @(unreadOnly ? "You have no unread notifications." : "You have no notifications yet.")
+        </div>
+    </div>
+}
+else
+{
+    <div class="card">
+        <ul class="list-group list-group-flush">
+            @foreach (var n in Model)
+            {
+                <li class="list-group-item d-flex align-items-start gap-3 py-3 @(n.IsRead ? "" : "beeciye-notif-unread-row")">
+                    <span class="beeciye-notif-icon"><i class="bi @n.Type.ToIconClass()"></i></span>
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between flex-wrap gap-2">
+                            <a asp-action="Open" asp-route-id="@n.Id" class="fw-semibold text-decoration-none text-body">
+                                @if (!n.IsRead)
+                                {
+                                    <span class="badge bg-primary me-1">New</span>
+                                }
+                                @n.Title
+                            </a>
+                            <small class="text-muted">@n.CreatedAt.ToString("MMM d, yyyy h:mm tt")</small>
+                        </div>
+                        <div class="text-muted">@n.Message</div>
+                    </div>
+                    <div class="d-flex gap-1">
+                        @if (!n.IsRead)
+                        {
+                            <form asp-action="MarkAsRead" asp-route-id="@n.Id" method="post">
+                                <button type="submit" class="btn btn-sm btn-light" title="Mark as read"><i class="bi bi-check2"></i></button>
+                            </form>
+                        }
+                        <form asp-action="Delete" asp-route-id="@n.Id" method="post">
+                            <button type="submit" class="btn btn-sm btn-light text-danger" title="Delete"><i class="bi bi-x-lg"></i></button>
+                        </form>
+                    </div>
+                </li>
+            }
+        </ul>
+    </div>
+}

@@ -1,0 +1,93 @@
+@{
+    ViewData["Title"] = "Add Order";
+    Layout = "_DashboardLayout";
+    ViewBag.ActiveNav = "Orders";
+    var customers = (List<BeeciyeMarket.Models.ApplicationUser>)ViewBag.Customers;
+    var products = (List<BeeciyeMarket.Models.Product>)ViewBag.Products;
+}
+
+<h1 class="mb-4">Add Order</h1>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+<form asp-controller="Admin" asp-action="CreateOrder" method="post">
+    <div class="row g-4">
+        <div class="col-md-7">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h6 class="card-title">Customer &amp; Shipping</h6>
+                    <div class="mb-3">
+                        <label class="form-label">Customer</label>
+                        <select name="customerId" class="form-select" required>
+                            <option value="">Select customer</option>
+                            @foreach (var customer in customers)
+                            {
+                                <option value="@customer.Id">@customer.FullName (@customer.Email)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Shipping Full Name</label>
+                        <input type="text" name="shippingFullName" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Shipping Phone</label>
+                        <input type="text" name="shippingPhone" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Shipping Address</label>
+                        <textarea name="shippingAddress" class="form-control" rows="2" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Payment Method</label>
+                        <select name="paymentMethod" class="form-select">
+                            <option value="CashOnDelivery">Mobile Payment on Delivery</option>
+                            <option value="MobileMoney">Mobile Money</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-5">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="card-title mb-0">Order Items</h6>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addRow()">+ Add Item</button>
+                    </div>
+                    <div id="itemRows"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-beeciye-gold mt-3">Create Order</button>
+    <a asp-controller="Admin" asp-action="Orders" class="btn btn-link mt-3">Cancel</a>
+</form>
+
+@section Scripts {
+    <script>
+        const products = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(products.Select(p => new { p.Id, p.Name, Price = p.UnitPrice })));
+
+        function addRow() {
+            const container = document.getElementById('itemRows');
+            const row = document.createElement('div');
+            row.className = 'd-flex gap-2 mb-2';
+            let options = '<option value="">Select product</option>';
+            products.forEach(p => {
+                options += `<option value="${p.Id}">${p.Name} ($${p.Price.toFixed(2)})</option>`;
+            });
+            row.innerHTML = `
+                <select name="productId" class="form-select form-select-sm" required>${options}</select>
+                <input type="number" name="quantity" class="form-control form-control-sm" value="1" min="1" style="width:80px;" />
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="this.parentElement.remove()">&times;</button>
+            `;
+            container.appendChild(row);
+        }
+
+        addRow();
+    </script>
+}

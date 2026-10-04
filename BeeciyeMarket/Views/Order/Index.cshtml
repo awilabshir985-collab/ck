@@ -1,0 +1,51 @@
+@model List<BeeciyeMarket.Models.Order>
+@{
+    ViewData["Title"] = "My Orders";
+    Layout = "_DashboardLayout";
+    BeeciyeMarket.Models.OrderStatus? statusFilter = ViewBag.StatusFilter;
+}
+
+<h1 class="mb-4">My Orders</h1>
+
+<ul class="nav nav-tabs mb-3">
+    <li class="nav-item"><a class="nav-link @(statusFilter == null ? "active" : "")" asp-controller="Order" asp-action="Index">All</a></li>
+    @foreach (var status in Enum.GetValues<BeeciyeMarket.Models.OrderStatus>())
+    {
+        <li class="nav-item"><a class="nav-link @(statusFilter == status ? "active" : "")" asp-controller="Order" asp-action="Index" asp-route-status="@status">@status</a></li>
+    }
+</ul>
+
+@if (!Model.Any())
+{
+    <p class="text-muted">No orders found.</p>
+}
+else
+{
+    <div class="card">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Order #</th>
+                    <th>Date</th>
+                    <th>Items</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var order in Model)
+                {
+                    <tr>
+                        <td>#@order.Id.ToString("D4")</td>
+                        <td>@order.OrderDate.ToString("MMM d, yyyy")</td>
+                        <td>@order.OrderItems.Sum(i => i.Quantity)</td>
+                        <td>$@order.TotalPrice.ToString("0.00")</td>
+                        <td><span class="badge badge-status-@order.Status.ToString().ToLower()">@order.Status</span></td>
+                        <td><a asp-controller="Order" asp-action="Details" asp-route-id="@order.Id" class="btn btn-sm btn-outline-primary">View</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

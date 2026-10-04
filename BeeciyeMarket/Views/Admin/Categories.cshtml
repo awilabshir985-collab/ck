@@ -1,0 +1,64 @@
+@model List<BeeciyeMarket.Models.Category>
+@{
+    ViewData["Title"] = "Manage Categories";
+    Layout = "_DashboardLayout";
+    var counts = (Dictionary<int, int>)ViewBag.ProductCounts;
+}
+
+<h1 class="mb-4">Manage Categories</h1>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+<div class="row g-4">
+    <div class="col-md-8">
+        <div class="card">
+            <table class="table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Icon</th>
+                        <th>Products</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var category in Model)
+                    {
+                        <tr>
+                            <td><i class="@category.IconClass"></i> @category.Name</td>
+                            <td><code>@category.IconClass</code></td>
+                            <td>@counts.GetValueOrDefault(category.Id)</td>
+                            <td class="d-flex gap-1">
+                                <a asp-controller="Admin" asp-action="EditCategory" asp-route-id="@category.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
+                                <form asp-controller="Admin" asp-action="DeleteCategory" asp-route-id="@category.Id" method="post" onsubmit="return confirm('Delete this category?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" @(counts.GetValueOrDefault(category.Id) > 0 ? "disabled" : "")>Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-title">Add Category</h6>
+                <form asp-controller="Admin" asp-action="AddCategory" method="post">
+                    <div class="mb-3">
+                        <label class="form-label">Name</label>
+                        <input type="text" name="name" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Icon class (Bootstrap Icons)</label>
+                        <input type="text" name="iconClass" class="form-control" placeholder="bi bi-tag" />
+                    </div>
+                    <button type="submit" class="btn btn-beeciye-gold">Add Category</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

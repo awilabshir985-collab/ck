@@ -1,0 +1,33 @@
+@model BeeciyeMarket.Models.Order
+@{
+    ViewData["Title"] = "Order #" + Model.Id;
+    Layout = "_DashboardLayout";
+}
+
+<h1 class="mb-4">Order #@Model.Id</h1>
+<p class="text-muted">Placed @Model.OrderDate.ToString("MMM d, yyyy") &middot; Status: <span class="badge badge-status-@Model.Status.ToString().ToLower()">@Model.Status</span></p>
+
+<ul class="list-group mb-3 col-md-6">
+    @foreach (var item in Model.OrderItems)
+    {
+        <li class="list-group-item d-flex justify-content-between">
+            <span>@item.Product?.Name &times; @item.Quantity</span>
+            <span>$@item.TotalPrice.ToString("0.00")</span>
+        </li>
+    }
+</ul>
+
+<div class="col-md-6">
+    <div class="d-flex justify-content-between fw-bold mb-3">
+        <span>Total</span>
+        <span>$@Model.TotalPrice.ToString("0.00")</span>
+    </div>
+    <p class="mb-1"><strong>Name:</strong> @Model.ShippingFullName</p>
+    <p class="mb-1"><strong>Phone:</strong> @Model.ShippingPhone</p>
+    <p><strong>Address:</strong> @Model.ShippingAddress</p>
+    @{
+        var latestPayment = Model.Payments.OrderByDescending(p => p.PaymentDate).FirstOrDefault();
+    }
+    <p><strong>Payment method:</strong> @Model.PaymentMethod.ToDisplayName() @(latestPayment != null ? $"({latestPayment.Status})" : "")</p>
+    <a asp-controller="Order" asp-action="Index" class="btn btn-link">Back to My Orders</a>
+</div>

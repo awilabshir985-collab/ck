@@ -1,0 +1,38 @@
+@model List<BeeciyeMarket.Models.Payment>
+@{
+    ViewData["Title"] = "Payments";
+    Layout = "_DashboardLayout";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">Payments</h1>
+    <a asp-controller="Admin" asp-action="CreatePayment" class="btn btn-beeciye-gold"><i class="bi bi-plus-circle"></i> Add Payment</a>
+</div>
+
+<div class="card">
+    <table class="table align-middle mb-0">
+        <thead>
+            <tr>
+                <th>Order #</th>
+                <th>Customer</th>
+                <th>Amount</th>
+                <th>Method</th>
+                <th>Date</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var payment in Model)
+            {
+                <tr>
+                    <td>@payment.OrderId</td>
+                    <td>@(payment.Order?.Customer?.FullName ?? payment.Order?.ShippingFullName)</td>
+                    <td>$@payment.Amount.ToString("0.00")</td>
+                    <td>@payment.PaymentMethod.ToDisplayName()</td>
+                    <td>@payment.PaymentDate.ToString("MMM d, yyyy")</td>
+                    <td><span class="badge badge-status-@payment.Status.ToString().ToLower()">@payment.Status</span></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

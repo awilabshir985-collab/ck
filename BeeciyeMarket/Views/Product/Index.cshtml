@@ -1,0 +1,108 @@
+@model BeeciyeMarket.Models.ViewModels.ProductListViewModel
+@{
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+    ViewData["Title"] = "Browse Products";
+    Layout = isAuthenticated ? "_DashboardLayout" : "_Layout";
+    ViewBag.ActiveNav = "Browse";
+}
+
+<h1 class="mb-4">All Products</h1>
+
+<form asp-controller="Product" asp-action="Index" method="get" class="row g-2 mb-4">
+    <div class="col-md-7">
+        <input type="text" name="search" value="@Model.SearchTerm" class="form-control" placeholder="Search products..." />
+    </div>
+    <div class="col-md-3">
+        <select name="categoryId" class="form-select" asp-items="@(new SelectList(Model.Categories, "Id", "Name", Model.SelectedCategoryId))">
+            <option value="">All Categories</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100">Search</button>
+    </div>
+</form>
+
+<div class="row">
+    <div class="col-md-3 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-title">Categories</h6>
+                <div class="list-group list-group-flush">
+                    <a asp-controller="Product" asp-action="Index" asp-route-search="@Model.SearchTerm" class="list-group-item list-group-item-action @(Model.SelectedCategoryId == null ? "active" : "")">All Categories</a>
+                    @foreach (var category in Model.Categories)
+                    {
+                        <a asp-controller="Product" asp-action="Index" asp-route-search="@Model.SearchTerm" asp-route-categoryId="@category.Id" class="list-group-item list-group-item-action @(Model.SelectedCategoryId == category.Id ? "active" : "")">
+                            <i class="@category.IconClass me-1"></i> @category.Name
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-9">
+        @if (!Model.Products.Any())
+        {
+            <p class="text-muted">No products found.</p>
+        }
+        else
+        {
+            <div class="row row-cols-1 row-cols-md-3 g-4">
+                @foreach (var product in Model.Products)
+                {
+                    var conditionBadge = product.Condition switch
+                    {
+                        BeeciyeMarket.Models.ProductCondition.New => "bg-success",
+                        BeeciyeMarket.Models.ProductCondition.Good => "bg-primary",
+                        _ => "bg-secondary"
+                    };
+                    <div class="col">
+                        <div class="card beeciye-product-card h-100">
+                            <img src="@(string.IsNullOrEmpty(product.ImagePath) ? "/images/products/no-image.svg" : product.ImagePath)" class="card-img-top" style="height:170px;object-fit:cover;" alt="@product.Name" />
+                            <div class="card-body pb-0">
+                                <h6 class="card-title mb-2">@product.Name</h6>
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <span class="badge @conditionBadge">@product.Condition</span>
+                                    <span class="text-muted small">@product.Category?.Name</span>
+                                </div>
+                                <p class="card-text fw-bold text-beeciye-navy mb-1 fs-5">$@product.CurrentValue.ToString("0.00")</p>
+                                <p class="card-text text-muted small">Seller: @(product.Seller?.FullName ?? product.GuestName)</p>
+                            </div>
+                            <div class="card-footer bg-transparent border-top-0 d-flex gap-2">
+                                <a asp-controller="Product" asp-action="Details" asp-route-id="@product.Id" class="btn btn-beeciye-navy btn-sm flex-fill">View Details</a>
+                                @if (isAuthenticated)
+                                {
+                                    <form asp-controller="Cart" asp-action="Add" method="post" class="flex-fill">
+                                        <input type="hidden" name="productId" value="@product.Id" />
+                                        <input type="hidden" name="quantity" value="1" />
+                                        <button type="submit" class="btn btn-beeciye-gold btn-sm w-100" @(product.Quantity < 1 ? "disabled" : "")>Add to Cart</button>
+                                    </form>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            @if (Model.TotalPages > 1)
+            {
+                <nav class="mt-4">
+                    <ul class="pagination">
+                        <li class="page-item @(Model.CurrentPage <= 1 ? "disabled" : "")">
+                            <a class="page-link" asp-controller="Product" asp-action="Index" asp-route-search="@Model.SearchTerm" asp-route-categoryId="@Model.SelectedCategoryId" asp-route-page="@(Model.CurrentPage - 1)"><i class="bi bi-chevron-left"></i></a>
+                        </li>
+                        @for (int i = 1; i <= Model.TotalPages; i++)
+                        {
+                            <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                                <a class="page-link" asp-controller="Product" asp-action="Index" asp-route-search="@Model.SearchTerm" asp-route-categoryId="@Model.SelectedCategoryId" asp-route-page="@i">@i</a>
+                            </li>
+                        }
+                        <li class="page-item @(Model.CurrentPage >= Model.TotalPages ? "disabled" : "")">
+                            <a class="page-link" asp-controller="Product" asp-action="Index" asp-route-search="@Model.SearchTerm" asp-route-categoryId="@Model.SelectedCategoryId" asp-route-page="@(Model.CurrentPage + 1)"><i class="bi bi-chevron-right"></i></a>
+                        </li>
+                    </ul>
+                </nav>
+            }
+        }
+    </div>
+</div>

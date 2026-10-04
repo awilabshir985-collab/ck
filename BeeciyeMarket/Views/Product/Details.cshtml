@@ -1,0 +1,152 @@
+@model BeeciyeMarket.Models.Product
+@{
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+    ViewData["Title"] = Model.Name;
+    Layout = isAuthenticated ? "_DashboardLayout" : "_Layout";
+    ViewBag.ActiveNav = "Browse";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-controller="Product" asp-action="Index">Products</a></li>
+        <li class="breadcrumb-item active" aria-current="page">@Model.Name</li>
+    </ol>
+</nav>
+
+@{
+    var gallery = Model.Images.Any()
+        ? Model.Images.Select(i => i.ImagePath).ToList()
+        : new List<string> { string.IsNullOrEmpty(Model.ImagePath) ? "/images/products/no-image.svg" : Model.ImagePath! };
+}
+
+<div class="row">
+    <div class="col-md-5">
+        <div class="d-flex gap-2">
+            @if (gallery.Count > 1)
+            {
+                <div class="d-flex flex-column gap-2">
+                    @foreach (var img in gallery)
+                    {
+                        <img src="@img" class="rounded beeciye-thumb @(img == gallery[0] ? "active" : "")" style="width:56px;height:56px;object-fit:cover;cursor:pointer;" onclick="document.getElementById('mainProductImage').src='@img'; document.querySelectorAll('.beeciye-thumb').forEach(function(t){t.classList.remove('active');}); this.classList.add('active');" />
+                    }
+                </div>
+            }
+            <img id="mainProductImage" src="@gallery[0]" class="img-fluid rounded flex-fill" alt="@Model.Name" style="max-height:380px;object-fit:cover;" />
+        </div>
+    </div>
+    <div class="col-md-7">
+        @{
+            var conditionBadge = Model.Condition switch
+            {
+                BeeciyeMarket.Models.ProductCondition.New => "bg-success",
+                BeeciyeMarket.Models.ProductCondition.Good => "bg-primary",
+                _ => "bg-secondary"
+            };
+        }
+        <h1>@Model.Name</h1>
+        <div class="mb-2 d-flex gap-2">
+            <span class="badge @conditionBadge">@Model.Condition</span>
+            <span class="badge bg-light text-dark border">@Model.Category?.Name</span>
+        </div>
+        <h3 class="text-beeciye-navy mb-1">$@Model.CurrentValue.ToString("0.00")</h3>
+        <p class="text-muted small mb-3">$@Model.UnitPrice.ToString("0.00") each</p>
+
+        <dl class="row mb-3">
+            <dt class="col-4 col-md-3 text-muted fw-normal">Condition</dt>
+            <dd class="col-8 col-md-9">@Model.Condition</dd>
+            <dt class="col-4 col-md-3 text-muted fw-normal">Quantity</dt>
+            <dd class="col-8 col-md-9">@Model.Quantity available</dd>
+            <dt class="col-4 col-md-3 text-muted fw-normal">Seller</dt>
+            <dd class="col-8 col-md-9">@(Model.Seller?.FullName ?? Model.GuestName)</dd>
+            @if (!string.IsNullOrEmpty(Model.Seller?.City))
+            {
+                <dt class="col-4 col-md-3 text-muted fw-normal">Location</dt>
+                <dd class="col-8 col-md-9">@Model.Seller.City</dd>
+            }
+            @if (!string.IsNullOrEmpty(Model.GuestPhone))
+            {
+                <dt class="col-4 col-md-3 text-muted fw-normal">Phone</dt>
+                <dd class="col-8 col-md-9">@Model.GuestPhone</dd>
+            }
+        </dl>
+
+        <p>@Model.Description</p>
+
+        <div class="d-flex align-items-center gap-2">
+            <input type="number" id="qtyInput" value="1" min="1" max="@Model.Quantity" class="form-control" style="width:100px;" />
+            @if (isAuthenticated)
+            {
+                <form asp-controller="Cart" asp-action="Add" method="post" id="addToCartForm">
+                    <input type="hidden" name="productId" value="@Model.Id" />
+                    <input type="hidden" name="quantity" id="addQty" value="1" />
+                    <button type="submit" class="btn btn-primary" @(Model.Quantity < 1 ? "disabled" : "")><i class="bi bi-cart-plus"></i> Add to Cart</button>
+                </form>
+                <form asp-controller="Order" asp-action="BuyNow" method="post" id="buyNowForm">
+                    <input type="hidden" name="productId" value="@Model.Id" />
+                    <input type="hidden" name="quantity" id="buyQty" value="1" />
+                    <button type="submit" class="btn btn-success" @(Model.Quantity < 1 ? "disabled" : "")>Buy Now</button>
+                </form>
+            }
+            else
+            {
+                <button type="button" class="btn btn-success" @(Model.Quantity < 1 ? "disabled" : "") data-bs-toggle="modal" data-bs-target="#guestBuyModal">Buy Now</button>
+            }
+        </div>
+
+        @if (!isAuthenticated)
+        {
+            <div class="modal fade" id="guestBuyModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <form asp-controller="Order" asp-action="BuyNow" method="post">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Complete Your Purchase</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <input type="hidden" name="productId" value="@Model.Id" />
+                                <input type="hidden" name="quantity" id="guestBuyQty" value="1" />
+                                <div class="mb-3">
+                                    <label class="form-label">Your Name</label>
+                                    <input type="text" name="guestName" class="form-control" required />
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Phone Number</label>
+                                    <input type="text" name="guestPhone" class="form-control" required />
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Delivery Address</label>
+                                    <input type="text" name="guestAddress" class="form-control" required />
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-success">Place Order</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <a asp-controller="Product" asp-action="Index" class="btn btn-link mt-2 d-block ps-0">Back to products</a>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const qtyInput = document.getElementById('qtyInput');
+        if (qtyInput) {
+            qtyInput.addEventListener('change', function () {
+                ['addQty', 'buyQty', 'guestBuyQty'].forEach(function (id) {
+                    var el = document.getElementById(id);
+                    if (el) el.value = qtyInput.value;
+                });
+            });
+        }
+    </script>
+}

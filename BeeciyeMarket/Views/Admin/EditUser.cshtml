@@ -1,0 +1,48 @@
+@model BeeciyeMarket.Models.ApplicationUser
+@{
+    ViewData["Title"] = "Edit User";
+    Layout = "_DashboardLayout";
+    bool isAdmin = ViewBag.IsAdmin;
+}
+
+<h1 class="mb-4">Edit User</h1>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+<form asp-controller="Admin" asp-action="EditUser" asp-route-id="@Model.Id" method="post" class="col-md-6">
+    <div class="mb-3">
+        <label class="form-label">Email</label>
+        <input type="text" class="form-control" value="@Model.Email" disabled />
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="FullName" class="form-label"></label>
+        <input asp-for="FullName" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="PhoneNumber" class="form-label"></label>
+        <input asp-for="PhoneNumber" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="City" class="form-label"></label>
+        <input asp-for="City" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Address" class="form-label"></label>
+        <input asp-for="Address" class="form-control" />
+    </div>
+
+    <div class="mb-3 form-check">
+        <input type="checkbox" name="isAdmin" value="true" class="form-check-input" id="isAdminCheck" checked="@isAdmin" />
+        <label class="form-check-label" for="isAdminCheck">Administrator</label>
+    </div>
+
+    <button type="submit" class="btn btn-beeciye-gold">Save Changes</button>
+    <a asp-controller="Admin" asp-action="Users" class="btn btn-link">Cancel</a>
+</form>

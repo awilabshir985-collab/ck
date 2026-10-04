@@ -1,0 +1,46 @@
+@model List<BeeciyeMarket.Models.OrderItem>
+@{
+    ViewData["Title"] = "Orders";
+    Layout = "_DashboardLayout";
+}
+
+<h1 class="mb-4">Orders</h1>
+
+@if (!Model.Any())
+{
+    <p class="text-muted">No sales yet.</p>
+}
+else
+{
+    <table class="table align-middle">
+        <thead>
+            <tr>
+                <th>Order #</th>
+                <th>Date</th>
+                <th>Product</th>
+                <th>Qty</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th>Buyer</th>
+                <th>Phone</th>
+                <th>Address</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.OrderId</td>
+                    <td>@item.Order?.OrderDate.ToString("MMM d, yyyy")</td>
+                    <td>@item.Product?.Name</td>
+                    <td>@item.Quantity</td>
+                    <td>$@item.TotalPrice.ToString("0.00")</td>
+                    <td><span class="badge badge-status-@item.Order?.Status.ToString().ToLower()">@item.Order?.Status</span></td>
+                    <td>@item.Order?.ShippingFullName</td>
+                    <td>@item.Order?.ShippingPhone</td>
+                    <td>@item.Order?.ShippingAddress</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

@@ -1,0 +1,50 @@
+@model BeeciyeMarket.Models.ApplicationUser
+@{
+    ViewData["Title"] = "Add User";
+    Layout = "_DashboardLayout";
+    ViewBag.ActiveNav = "Users";
+}
+
+<h1 class="mb-4">Add User</h1>
+
+<form asp-controller="Admin" asp-action="CreateUser" method="post" class="col-md-6">
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+    <div class="mb-3">
+        <label asp-for="FullName" class="form-label"></label>
+        <input asp-for="FullName" class="form-control" required />
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Email" class="form-label"></label>
+        <input asp-for="Email" class="form-control" required />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Password</label>
+        <input type="password" name="password" class="form-control" required minlength="6" />
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="PhoneNumber" class="form-label"></label>
+        <input asp-for="PhoneNumber" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="City" class="form-label"></label>
+        <input asp-for="City" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Address" class="form-label"></label>
+        <input asp-for="Address" class="form-control" />
+    </div>
+
+    <div class="mb-3 form-check">
+        <input type="checkbox" name="isAdmin" value="true" class="form-check-input" id="isAdminCheck" />
+        <label class="form-check-label" for="isAdminCheck">Administrator</label>
+    </div>
+
+    <button type="submit" class="btn btn-beeciye-gold">Create User</button>
+    <a asp-controller="Admin" asp-action="Users" class="btn btn-link">Cancel</a>
+</form>

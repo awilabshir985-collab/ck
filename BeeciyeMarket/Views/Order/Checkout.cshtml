@@ -1,0 +1,97 @@
+@model BeeciyeMarket.Models.ViewModels.CheckoutViewModel
+@{
+    ViewData["Title"] = "Checkout";
+    Layout = "_DashboardLayout";
+}
+
+<h1 class="mb-4">Checkout</h1>
+
+<div class="row">
+    <div class="col-md-7">
+        <form asp-controller="Order" asp-action="Checkout" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h6 class="d-flex align-items-center gap-2 mb-3">
+                        <span class="beeciye-step-badge">1</span> Shipping Details
+                    </h6>
+
+                    <div class="mb-3">
+                        <label asp-for="ShippingFullName" class="form-label"></label>
+                        <input asp-for="ShippingFullName" class="form-control" />
+                        <span asp-validation-for="ShippingFullName" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="ShippingPhone" class="form-label"></label>
+                        <input asp-for="ShippingPhone" class="form-control" />
+                        <span asp-validation-for="ShippingPhone" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-0">
+                        <label asp-for="ShippingAddress" class="form-label"></label>
+                        <textarea asp-for="ShippingAddress" class="form-control" rows="3"></textarea>
+                        <span asp-validation-for="ShippingAddress" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h6 class="d-flex align-items-center gap-2 mb-3">
+                        <span class="beeciye-step-badge">2</span> Payment Method
+                    </h6>
+                    <div class="d-flex gap-3">
+                        <div class="form-check border rounded px-3 py-2 flex-fill">
+                            <input class="form-check-input" type="radio" asp-for="PaymentMethod" id="pmCod" value="@BeeciyeMarket.Models.PaymentMethod.CashOnDelivery" checked="@(Model.PaymentMethod == BeeciyeMarket.Models.PaymentMethod.CashOnDelivery)" />
+                            <label class="form-check-label" for="pmCod"><i class="bi bi-phone"></i> Mobile Payment on Delivery</label>
+                        </div>
+                        <div class="form-check border rounded px-3 py-2 flex-fill">
+                            <input class="form-check-input" type="radio" asp-for="PaymentMethod" id="pmMobile" value="@BeeciyeMarket.Models.PaymentMethod.MobileMoney" checked="@(Model.PaymentMethod == BeeciyeMarket.Models.PaymentMethod.MobileMoney)" />
+                            <label class="form-check-label" for="pmMobile"><i class="bi bi-phone"></i> Mobile Money</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h6 class="d-flex align-items-center gap-2 mb-3">
+                        <span class="beeciye-step-badge">3</span> Review &amp; Place Order
+                    </h6>
+                    <p class="text-muted small mb-3">Please review your order summary before confirming.</p>
+                    <button type="submit" class="btn btn-beeciye-gold">Place Order</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Order Summary</h5>
+                <ul class="list-group list-group-flush">
+                    @foreach (var item in Model.Items)
+                    {
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>@item.Product?.Name &times; @item.Quantity</span>
+                            <span>$@((item.Product!.UnitPrice * item.Quantity).ToString("0.00"))</span>
+                        </li>
+                    }
+                </ul>
+                <div class="d-flex justify-content-between mt-3">
+                    <span>Subtotal</span>
+                    <span>$@Model.Subtotal.ToString("0.00")</span>
+                </div>
+                <div class="d-flex justify-content-between fw-bold">
+                    <span>Total</span>
+                    <span>$@Model.Total.ToString("0.00")</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

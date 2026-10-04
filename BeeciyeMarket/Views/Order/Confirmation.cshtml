@@ -1,0 +1,39 @@
+@model BeeciyeMarket.Models.Order
+@{
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+    ViewData["Title"] = "Order Confirmed";
+    Layout = isAuthenticated ? "_DashboardLayout" : "_Layout";
+    ViewBag.ActiveNav = "MyOrders";
+}
+
+<div class="text-center mb-4">
+    <h1 class="text-success">Thank you! Your order has been placed.</h1>
+    <p class="text-muted">Order #@Model.Id &middot; @Model.OrderDate.ToString("MMM d, yyyy")</p>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <ul class="list-group mb-3">
+            @foreach (var item in Model.OrderItems)
+            {
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>@item.Product?.Name &times; @item.Quantity</span>
+                    <span>$@item.TotalPrice.ToString("0.00")</span>
+                </li>
+            }
+        </ul>
+        <div class="d-flex justify-content-between fw-bold mb-3">
+            <span>Total</span>
+            <span>$@Model.TotalPrice.ToString("0.00")</span>
+        </div>
+        <p class="mb-1"><strong>Name:</strong> @Model.ShippingFullName</p>
+        <p class="mb-1"><strong>Phone:</strong> @Model.ShippingPhone</p>
+        <p><strong>Address:</strong> @Model.ShippingAddress</p>
+        <p><strong>Payment method:</strong> @Model.PaymentMethod.ToDisplayName()</p>
+        <a asp-controller="Product" asp-action="Index" class="btn btn-primary">Continue Shopping</a>
+        @if (isAuthenticated)
+        {
+            <a asp-controller="Order" asp-action="Index" class="btn btn-link">View My Orders</a>
+        }
+    </div>
+</div>

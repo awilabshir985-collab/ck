@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Beeciye</title>
+    <script type="importmap"></script>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/BeeciyeMarket.styles.css" asp-append-version="true" />
+</head>
+@inject Microsoft.AspNetCore.Identity.UserManager<BeeciyeMarket.Models.ApplicationUser> UserManager
+<body>
+    @{
+        var isAdmin = User.IsInRole(BeeciyeMarket.Data.Roles.Admin);
+        string active = ViewBag.ActiveNav as string ?? string.Empty;
+        string NavClass(string key) => active == key ? "nav-link active" : "nav-link";
+        var currentUser = User.Identity?.IsAuthenticated == true ? await UserManager.GetUserAsync(User) : null;
+    }
+    <nav class="navbar navbar-dark bg-beeciye-navy beeciye-navbar">
+        <div class="container-fluid">
+            <a class="navbar-brand beeciye-brand" asp-controller="Home" asp-action="Index">
+                <span class="beeciye-logo-icon"><i class="bi bi-shop"></i></span>
+                <span>Beeciye<small>Second-Hand Market</small></span>
+            </a>
+            @await Component.InvokeAsync("NotificationBell")
+        </div>
+    </nav>
+
+    <div class="beeciye-dashboard">
+        <aside class="beeciye-sidebar">
+            <div class="beeciye-sidebar-user">
+                @if (!string.IsNullOrEmpty(currentUser?.ProfileImagePath))
+                {
+                    <img src="@currentUser.ProfileImagePath" class="beeciye-avatar rounded-circle" style="width:40px;height:40px;object-fit:cover;" alt="Profile picture" />
+                }
+                else
+                {
+                    <span class="beeciye-avatar">@(User.Identity?.Name?.Substring(0, 1).ToUpper())</span>
+                }
+                <div>
+                    <div class="fw-semibold text-white">@User.Identity?.Name</div>
+                    <small class="text-white-50">@(isAdmin ? "Administrator" : "User")</small>
+                </div>
+            </div>
+            <nav class="nav flex-column">
+                @if (isAdmin)
+                {
+                    <a class="@NavClass("Dashboard")" asp-controller="Admin" asp-action="Dashboard"><i class="bi bi-speedometer2"></i> Dashboard</a>
+                    <a class="@NavClass("Users")" asp-controller="Admin" asp-action="Users"><i class="bi bi-people"></i> Manage Users</a>
+                    <a class="@NavClass("Products")" asp-controller="Admin" asp-action="Products"><i class="bi bi-box-seam"></i> Manage Products</a>
+                    <a class="@NavClass("Categories")" asp-controller="Admin" asp-action="Categories"><i class="bi bi-tags"></i> Manage Categories</a>
+                    <a class="@NavClass("Orders")" asp-controller="Admin" asp-action="Orders"><i class="bi bi-receipt"></i> Manage Orders</a>
+                    <a class="@NavClass("Payments")" asp-controller="Admin" asp-action="Payments"><i class="bi bi-credit-card"></i> Payments</a>
+                    <a class="@NavClass("Reports")" asp-controller="Admin" asp-action="Reports"><i class="bi bi-graph-up"></i> Reports</a>
+                }
+                else
+                {
+                    <a class="@NavClass("Dashboard")" asp-controller="Seller" asp-action="Dashboard"><i class="bi bi-speedometer2"></i> Dashboard</a>
+                    <a class="@NavClass("Browse")" asp-controller="Product" asp-action="Index"><i class="bi bi-shop-window"></i> Browse Products</a>
+                    <a class="@NavClass("Cart")" asp-controller="Cart" asp-action="Index"><i class="bi bi-cart3"></i> My Cart</a>
+                    <a class="@NavClass("MyOrders")" asp-controller="Order" asp-action="Index"><i class="bi bi-bag-check"></i> My Orders</a>
+                    <hr class="text-white-50 my-2" />
+                    <a class="@NavClass("Create")" asp-controller="Product" asp-action="Create"><i class="bi bi-plus-circle"></i> Add Product</a>
+                    <a class="@NavClass("MyProducts")" asp-controller="Product" asp-action="MyProducts"><i class="bi bi-box-seam"></i> My Products</a>
+                    <a class="@NavClass("Sales")" asp-controller="Order" asp-action="Sales"><i class="bi bi-receipt"></i> My Sales</a>
+                    <a class="@NavClass("Reports")" asp-controller="Seller" asp-action="Reports"><i class="bi bi-graph-up"></i> Reports</a>
+                }
+                <a class="@NavClass("Notifications")" asp-controller="Notification" asp-action="Index"><i class="bi bi-bell"></i> Notifications</a>
+                <a class="@NavClass("Profile")"asp-controller="Account" asp-action="Profile"><i class="bi bi-person"></i> Profile</a>
+                <form asp-controller="Account" asp-action="Logout" method="post">
+                    <button type="submit" class="nav-link border-0 bg-transparent w-100 text-start"><i class="bi bi-box-arrow-right"></i> Logout</button>
+                </form>
+            </nav>
+        </aside>
+        <div class="beeciye-dashboard-content">
+            @RenderBody()
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

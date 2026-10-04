@@ -1,0 +1,92 @@
+@model BeeciyeMarket.Models.ViewModels.CartViewModel
+@{
+    ViewData["Title"] = "Your Cart";
+    Layout = "_DashboardLayout";
+}
+
+<h1 class="mb-4">Your Cart</h1>
+
+@if (!Model.Items.Any())
+{
+    <p class="text-muted">Your cart is empty.</p>
+    <a asp-controller="Product" asp-action="Index" class="btn btn-beeciye-gold">Browse Products</a>
+}
+else
+{
+    <div class="card mb-4">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Product</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                    <th>Total</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Items)
+                {
+                    <tr>
+                        <td><img src="@(string.IsNullOrEmpty(item.Product?.ImagePath) ? "/images/products/no-image.svg" : item.Product.ImagePath)" style="width:56px;height:56px;object-fit:cover;" class="rounded" /></td>
+                        <td>@item.Product?.Name</td>
+                        <td>$@item.Product?.UnitPrice.ToString("0.00")</td>
+                        <td style="width:150px;">
+                            <form asp-controller="Cart" asp-action="UpdateQuantity" asp-route-id="@item.Id" method="post" class="d-flex align-items-center gap-1">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="step(this, -1)">-</button>
+                                <input type="number" name="quantity" value="@item.Quantity" min="1" max="@item.Product?.Quantity" class="form-control form-control-sm text-center" style="width:55px;" />
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="step(this, 1)">+</button>
+                                <button type="submit" class="btn btn-sm btn-link">Update</button>
+                            </form>
+                        </td>
+                        <td>$@((item.Product!.UnitPrice * item.Quantity).ToString("0.00"))</td>
+                        <td>
+                            <form asp-controller="Cart" asp-action="Remove" asp-route-id="@item.Id" method="post">
+                                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="row justify-content-end">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <span>Subtotal</span>
+                        <span>$@Model.Subtotal.ToString("0.00")</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Shipping</span>
+                        <span>$@Model.Shipping.ToString("0.00")</span>
+                    </div>
+                    <hr />
+                    <div class="d-flex justify-content-between fw-bold">
+                        <span>Total</span>
+                        <span>$@Model.Total.ToString("0.00")</span>
+                    </div>
+                    <a asp-controller="Order" asp-action="Checkout" class="btn btn-beeciye-gold w-100 mt-3">Proceed to Checkout</a>
+                    <a asp-controller="Product" asp-action="Index" class="btn btn-link w-100">Continue Shopping</a>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        function step(button, delta) {
+            const input = button.parentElement.querySelector('input[type=number]');
+            const min = parseInt(input.min || '1');
+            const max = parseInt(input.max || '999');
+            let value = parseInt(input.value || '1') + delta;
+            if (value < min) value = min;
+            if (value > max) value = max;
+            input.value = value;
+        }
+    </script>
+}

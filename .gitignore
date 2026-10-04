@@ -1,0 +1,16 @@
+# Build output
+bin/
+obj/
+.vs/
+*.user
+*.suo
+
+# Local test/debug leftovers
+BeeciyeMarket/cookies*.txt
+BeeciyeMarket/login*.html
+BeeciyeMarket/login*_headers.txt
+BeeciyeMarket/profile_check.html
+
+# Thesis backups
+Thesis/*_backup_*.docx
+~$*
