@@ -15,7 +15,18 @@ namespace BeeciyeMarket.Data
 
             // Migrations are SQL Server-specific; on PostgreSQL build the schema straight from the model
             if (context.Database.IsNpgsql())
+            {
                 await context.Database.EnsureCreatedAsync();
+                // EnsureCreated skips existing databases, so add columns introduced after the first deploy
+                await context.Database.ExecuteSqlRawAsync(@"
+                    ALTER TABLE ""Orders"" ADD COLUMN IF NOT EXISTS ""ShippingCity"" character varying(100);
+                    ALTER TABLE ""Orders"" ADD COLUMN IF NOT EXISTS ""ShippingDistrict"" character varying(100);
+                    ALTER TABLE ""Orders"" ADD COLUMN IF NOT EXISTS ""DeliveryNotes"" character varying(300);
+                    ALTER TABLE ""Orders"" ADD COLUMN IF NOT EXISTS ""DeliveryMethod"" integer NOT NULL DEFAULT 0;
+                    ALTER TABLE ""Orders"" ADD COLUMN IF NOT EXISTS ""DeliveryFee"" numeric(18,2) NOT NULL DEFAULT 0;
+                    ALTER TABLE ""Payments"" ADD COLUMN IF NOT EXISTS ""Provider"" integer;
+                    ALTER TABLE ""Payments"" ADD COLUMN IF NOT EXISTS ""PayerPhone"" character varying(20);");
+            }
             else
                 await context.Database.MigrateAsync();
 

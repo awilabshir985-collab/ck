@@ -33,8 +33,31 @@ namespace BeeciyeMarket.Models
         [Display(Name = "Delivery Address")]
         public string ShippingAddress { get; set; } = string.Empty;
 
+        [StringLength(100)]
+        [Display(Name = "City")]
+        public string? ShippingCity { get; set; }
+
+        [StringLength(100)]
+        [Display(Name = "District / Neighbourhood")]
+        public string? ShippingDistrict { get; set; }
+
+        [StringLength(300)]
+        [Display(Name = "Delivery Notes")]
+        public string? DeliveryNotes { get; set; }
+
+        [Display(Name = "Delivery Method")]
+        public DeliveryMethod DeliveryMethod { get; set; } = DeliveryMethod.HomeDelivery;
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal DeliveryFee { get; set; }
+
         [Display(Name = "Payment Method")]
         public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.CashOnDelivery;
+
+        [NotMapped]
+        public string FullDeliveryAddress => DeliveryMethod == DeliveryMethod.Pickup
+            ? "Pickup from seller"
+            : string.Join(", ", new[] { ShippingAddress, ShippingDistrict, ShippingCity }.Where(s => !string.IsNullOrWhiteSpace(s)));
 
         public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
         public ICollection<Payment> Payments { get; set; } = new List<Payment>();

@@ -23,6 +23,7 @@ else
                 <th>Status</th>
                 <th>Buyer</th>
                 <th>Phone</th>
+                <th>Delivery</th>
                 <th>Address</th>
             </tr>
         </thead>
@@ -38,7 +39,8 @@ else
                     <td><span class="badge badge-status-@item.Order?.Status.ToString().ToLower()">@item.Order?.Status</span></td>
                     <td>@item.Order?.ShippingFullName</td>
                     <td>@item.Order?.ShippingPhone</td>
-                    <td>@item.Order?.ShippingAddress</td>
+                    <td>@item.Order?.DeliveryMethod.ToDisplayName()</td>
+                    <td>@item.Order?.FullDeliveryAddress</td>
                 </tr>
             }
         </tbody>

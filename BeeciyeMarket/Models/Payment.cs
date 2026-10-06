@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BeeciyeMarket.Models
@@ -19,5 +20,10 @@ namespace BeeciyeMarket.Models
         public PaymentStatus Status { get; set; } = PaymentStatus.Pending;
 
         public string? TransactionReference { get; set; }
+
+        public MobileMoneyProvider? Provider { get; set; }
+
+        [StringLength(20)]
+        public string? PayerPhone { get; set; }
     }
 }

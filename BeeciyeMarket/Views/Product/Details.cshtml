@@ -86,52 +86,13 @@
                     <input type="hidden" name="quantity" id="addQty" value="1" />
                     <button type="submit" class="btn btn-primary" @(Model.Quantity < 1 ? "disabled" : "")><i class="bi bi-cart-plus"></i> Add to Cart</button>
                 </form>
-                <form asp-controller="Order" asp-action="BuyNow" method="post" id="buyNowForm">
-                    <input type="hidden" name="productId" value="@Model.Id" />
-                    <input type="hidden" name="quantity" id="buyQty" value="1" />
-                    <button type="submit" class="btn btn-success" @(Model.Quantity < 1 ? "disabled" : "")>Buy Now</button>
-                </form>
             }
-            else
-            {
-                <button type="button" class="btn btn-success" @(Model.Quantity < 1 ? "disabled" : "") data-bs-toggle="modal" data-bs-target="#guestBuyModal">Buy Now</button>
-            }
+            <form asp-controller="Order" asp-action="BuyNow" method="get" id="buyNowForm">
+                <input type="hidden" name="productId" value="@Model.Id" />
+                <input type="hidden" name="quantity" id="buyQty" value="1" />
+                <button type="submit" class="btn btn-success" @(Model.Quantity < 1 ? "disabled" : "")>Buy Now</button>
+            </form>
         </div>
-
-        @if (!isAuthenticated)
-        {
-            <div class="modal fade" id="guestBuyModal" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <form asp-controller="Order" asp-action="BuyNow" method="post">
-                            <div class="modal-header">
-                                <h5 class="modal-title">Complete Your Purchase</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                                <input type="hidden" name="productId" value="@Model.Id" />
-                                <input type="hidden" name="quantity" id="guestBuyQty" value="1" />
-                                <div class="mb-3">
-                                    <label class="form-label">Your Name</label>
-                                    <input type="text" name="guestName" class="form-control" required />
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Phone Number</label>
-                                    <input type="text" name="guestPhone" class="form-control" required />
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Delivery Address</label>
-                                    <input type="text" name="guestAddress" class="form-control" required />
-                                </div>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="submit" class="btn btn-success">Place Order</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        }
 
         <a asp-controller="Product" asp-action="Index" class="btn btn-link mt-2 d-block ps-0">Back to products</a>
     </div>
@@ -142,7 +103,7 @@
         const qtyInput = document.getElementById('qtyInput');
         if (qtyInput) {
             qtyInput.addEventListener('change', function () {
-                ['addQty', 'buyQty', 'guestBuyQty'].forEach(function (id) {
+                ['addQty', 'buyQty'].forEach(function (id) {
                     var el = document.getElementById(id);
                     if (el) el.value = qtyInput.value;
                 });

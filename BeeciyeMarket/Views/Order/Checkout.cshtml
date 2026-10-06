@@ -1,69 +1,161 @@
 @model BeeciyeMarket.Models.ViewModels.CheckoutViewModel
+@using BeeciyeMarket.Models
+@inject Microsoft.Extensions.Configuration.IConfiguration Config
 @{
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+    var isBuyNow = Model.BuyNowProductId.HasValue;
     ViewData["Title"] = "Checkout";
-    Layout = "_DashboardLayout";
+    Layout = isAuthenticated ? "_DashboardLayout" : "_Layout";
+    var merchantNumber = Config["Payments:MerchantNumber"] ?? "";
+    var merchantName = Config["Payments:MerchantName"] ?? "Beeciye Market";
 }
 
 <h1 class="mb-4">Checkout</h1>
 
 <div class="row">
     <div class="col-md-7">
-        <form asp-controller="Order" asp-action="Checkout" method="post">
+        <form asp-controller="Order" asp-action="@(isBuyNow ? "BuyNow" : "Checkout")" method="post" id="checkoutForm">
             <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
+            @if (isBuyNow)
+            {
+                <input type="hidden" asp-for="BuyNowProductId" />
+                <input type="hidden" asp-for="BuyNowQuantity" />
+            }
+
+            @* 1. Contact *@
             <div class="card mb-3">
                 <div class="card-body">
                     <h6 class="d-flex align-items-center gap-2 mb-3">
-                        <span class="beeciye-step-badge">1</span> Shipping Details
+                        <span class="beeciye-step-badge">1</span> Contact Details
                     </h6>
-
-                    <div class="mb-3">
-                        <label asp-for="ShippingFullName" class="form-label"></label>
-                        <input asp-for="ShippingFullName" class="form-control" />
-                        <span asp-validation-for="ShippingFullName" class="text-danger"></span>
-                    </div>
-
-                    <div class="mb-3">
-                        <label asp-for="ShippingPhone" class="form-label"></label>
-                        <input asp-for="ShippingPhone" class="form-control" />
-                        <span asp-validation-for="ShippingPhone" class="text-danger"></span>
-                    </div>
-
-                    <div class="mb-0">
-                        <label asp-for="ShippingAddress" class="form-label"></label>
-                        <textarea asp-for="ShippingAddress" class="form-control" rows="3"></textarea>
-                        <span asp-validation-for="ShippingAddress" class="text-danger"></span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card mb-3">
-                <div class="card-body">
-                    <h6 class="d-flex align-items-center gap-2 mb-3">
-                        <span class="beeciye-step-badge">2</span> Payment Method
-                    </h6>
-                    <div class="d-flex gap-3">
-                        <div class="form-check border rounded px-3 py-2 flex-fill">
-                            <input class="form-check-input" type="radio" asp-for="PaymentMethod" id="pmCod" value="@BeeciyeMarket.Models.PaymentMethod.CashOnDelivery" checked="@(Model.PaymentMethod == BeeciyeMarket.Models.PaymentMethod.CashOnDelivery)" />
-                            <label class="form-check-label" for="pmCod"><i class="bi bi-phone"></i> Mobile Payment on Delivery</label>
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <label asp-for="ShippingFullName" class="form-label"></label>
+                            <input asp-for="ShippingFullName" class="form-control" />
+                            <span asp-validation-for="ShippingFullName" class="text-danger"></span>
                         </div>
-                        <div class="form-check border rounded px-3 py-2 flex-fill">
-                            <input class="form-check-input" type="radio" asp-for="PaymentMethod" id="pmMobile" value="@BeeciyeMarket.Models.PaymentMethod.MobileMoney" checked="@(Model.PaymentMethod == BeeciyeMarket.Models.PaymentMethod.MobileMoney)" />
-                            <label class="form-check-label" for="pmMobile"><i class="bi bi-phone"></i> Mobile Money</label>
+                        <div class="col-sm-6">
+                            <label asp-for="ShippingPhone" class="form-label"></label>
+                            <input asp-for="ShippingPhone" class="form-control" placeholder="e.g. 0907123456" />
+                            <span asp-validation-for="ShippingPhone" class="text-danger"></span>
                         </div>
                     </div>
                 </div>
             </div>
 
+            @* 2. Delivery method *@
             <div class="card mb-3">
                 <div class="card-body">
                     <h6 class="d-flex align-items-center gap-2 mb-3">
-                        <span class="beeciye-step-badge">3</span> Review &amp; Place Order
+                        <span class="beeciye-step-badge">2</span> Delivery Method
                     </h6>
-                    <p class="text-muted small mb-3">Please review your order summary before confirming.</p>
-                    <button type="submit" class="btn btn-beeciye-gold">Place Order</button>
+                    <div class="d-flex flex-column gap-2">
+                        @foreach (var method in Enum.GetValues<DeliveryMethod>())
+                        {
+                            var fee = method.ToFee();
+                            <label class="form-check border rounded px-3 py-2 d-flex align-items-center gap-3 mb-0" for="dm@(method)" style="cursor:pointer;">
+                                <input class="form-check-input ms-0 mt-0 delivery-option" type="radio" name="@nameof(Model.DeliveryMethod)" id="dm@(method)"
+                                       value="@method" data-fee="@fee.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)" checked="@(Model.DeliveryMethod == method)" />
+                                <i class="bi @method.ToIconClass() fs-4 text-beeciye-navy"></i>
+                                <span class="flex-fill">
+                                    <span class="fw-semibold d-block">@method.ToDisplayName()</span>
+                                    <span class="text-muted small">@method.ToDescription()</span>
+                                </span>
+                                <span class="fw-semibold">@(fee == 0 ? "Free" : "$" + fee.ToString("0.00"))</span>
+                            </label>
+                        }
+                    </div>
                 </div>
             </div>
+
+            @* 3. Address *@
+            <div class="card mb-3" id="addressSection">
+                <div class="card-body">
+                    <h6 class="d-flex align-items-center gap-2 mb-3">
+                        <span class="beeciye-step-badge">3</span> Delivery Address
+                    </h6>
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <label asp-for="ShippingCity" class="form-label"></label>
+                            <input asp-for="ShippingCity" class="form-control" placeholder="e.g. Garowe" />
+                            <span asp-validation-for="ShippingCity" class="text-danger"></span>
+                        </div>
+                        <div class="col-sm-6">
+                            <label asp-for="ShippingDistrict" class="form-label"></label>
+                            <input asp-for="ShippingDistrict" class="form-control" placeholder="e.g. Waaberi" />
+                            <span asp-validation-for="ShippingDistrict" class="text-danger"></span>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="ShippingAddress" class="form-label"></label>
+                            <input asp-for="ShippingAddress" class="form-control" placeholder="Street name, house number or a nearby landmark" />
+                            <span asp-validation-for="ShippingAddress" class="text-danger"></span>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="DeliveryNotes" class="form-label"></label>
+                            <textarea asp-for="DeliveryNotes" class="form-control" rows="2" placeholder="Anything the driver should know"></textarea>
+                            <span asp-validation-for="DeliveryNotes" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="alert alert-info d-none" id="pickupNote">
+                <i class="bi bi-shop"></i> You chose to pick up the item. The seller will call you on your phone number to arrange where and when.
+            </div>
+
+            @* 4. Payment *@
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h6 class="d-flex align-items-center gap-2 mb-3">
+                        <span class="beeciye-step-badge">4</span> Payment
+                    </h6>
+                    <div class="d-flex flex-column flex-sm-row gap-2 mb-3">
+                        <div class="form-check border rounded px-3 py-2 flex-fill">
+                            <input class="form-check-input ms-0 me-2 payment-option" type="radio" name="@nameof(Model.PaymentMethod)" id="pmMobile" value="@PaymentMethod.MobileMoney" checked="@(Model.PaymentMethod == PaymentMethod.MobileMoney)" />
+                            <label class="form-check-label" for="pmMobile"><i class="bi bi-phone"></i> Pay now with Mobile Money</label>
+                        </div>
+                        <div class="form-check border rounded px-3 py-2 flex-fill">
+                            <input class="form-check-input ms-0 me-2 payment-option" type="radio" name="@nameof(Model.PaymentMethod)" id="pmCod" value="@PaymentMethod.CashOnDelivery" checked="@(Model.PaymentMethod == PaymentMethod.CashOnDelivery)" />
+                            <label class="form-check-label" for="pmCod"><i class="bi bi-cash-coin"></i> Pay on delivery / pickup</label>
+                        </div>
+                    </div>
+
+                    <div id="mobileMoneyPanel">
+                        <div class="border rounded p-3 mb-3 bg-light">
+                            <p class="fw-semibold mb-2">How to pay</p>
+                            <ol class="small mb-0 ps-3">
+                                <li>Send <strong>$<span class="js-total">@Model.Total.ToString("0.00")</span></strong> to <strong>@merchantName</strong> merchant number <strong>@merchantNumber</strong> using EVC Plus, Zaad, Sahal or eDahab.</li>
+                                <li>You will receive a confirmation SMS with a transaction ID.</li>
+                                <li>Enter the details below and place your order.</li>
+                            </ol>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-sm-4">
+                                <label asp-for="Provider" class="form-label"></label>
+                                <select asp-for="Provider" asp-items="Html.GetEnumSelectList<MobileMoneyProvider>()" class="form-select">
+                                    <option value="">Choose...</option>
+                                </select>
+                                <span asp-validation-for="Provider" class="text-danger"></span>
+                            </div>
+                            <div class="col-sm-4">
+                                <label asp-for="PayerPhone" class="form-label"></label>
+                                <input asp-for="PayerPhone" class="form-control" />
+                                <span asp-validation-for="PayerPhone" class="text-danger"></span>
+                            </div>
+                            <div class="col-sm-4">
+                                <label asp-for="TransactionReference" class="form-label"></label>
+                                <input asp-for="TransactionReference" class="form-control" />
+                                <span asp-validation-for="TransactionReference" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-muted small mb-0 d-none" id="codNote">
+                        You will pay <strong>$<span class="js-total">@Model.Total.ToString("0.00")</span></strong> by mobile money when you receive the item.
+                    </p>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-beeciye-gold btn-lg w-100 mb-4">Place Order &middot; $<span class="js-total">@Model.Total.ToString("0.00")</span></button>
         </form>
     </div>
     <div class="col-md-5">
@@ -83,9 +175,14 @@
                     <span>Subtotal</span>
                     <span>$@Model.Subtotal.ToString("0.00")</span>
                 </div>
+                <div class="d-flex justify-content-between">
+                    <span>Delivery</span>
+                    <span id="summaryFee">@(Model.DeliveryFee == 0 ? "Free" : "$" + Model.DeliveryFee.ToString("0.00"))</span>
+                </div>
+                <hr />
                 <div class="d-flex justify-content-between fw-bold">
                     <span>Total</span>
-                    <span>$@Model.Total.ToString("0.00")</span>
+                    <span>$<span class="js-total">@Model.Total.ToString("0.00")</span></span>
                 </div>
             </div>
         </div>
@@ -94,4 +191,29 @@
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        (function () {
+            var subtotal = @Model.Subtotal.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+
+            function refresh() {
+                var delivery = document.querySelector('.delivery-option:checked');
+                var fee = delivery ? parseFloat(delivery.dataset.fee) : 0;
+                var isPickup = delivery && delivery.value === '@DeliveryMethod.Pickup';
+                document.getElementById('addressSection').classList.toggle('d-none', isPickup);
+                document.getElementById('pickupNote').classList.toggle('d-none', !isPickup);
+                document.getElementById('summaryFee').textContent = fee === 0 ? 'Free' : '$' + fee.toFixed(2);
+                document.querySelectorAll('.js-total').forEach(function (el) { el.textContent = (subtotal + fee).toFixed(2); });
+
+                var payment = document.querySelector('.payment-option:checked');
+                var isMobile = payment && payment.value === '@PaymentMethod.MobileMoney';
+                document.getElementById('mobileMoneyPanel').classList.toggle('d-none', !isMobile);
+                document.getElementById('codNote').classList.toggle('d-none', isMobile);
+            }
+
+            document.querySelectorAll('.delivery-option, .payment-option').forEach(function (el) {
+                el.addEventListener('change', refresh);
+            });
+            refresh();
+        })();
+    </script>
 }

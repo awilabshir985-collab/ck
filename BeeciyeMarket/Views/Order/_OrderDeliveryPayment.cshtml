@@ -1,0 +1,33 @@
+@model BeeciyeMarket.Models.Order
+@{
+    var latestPayment = Model.Payments.OrderByDescending(p => p.PaymentDate).FirstOrDefault();
+}
+
+<div class="row g-3 mb-3">
+    <div class="col-sm-6">
+        <div class="border rounded p-3 h-100">
+            <p class="fw-semibold mb-2"><i class="bi @Model.DeliveryMethod.ToIconClass()"></i> Delivery</p>
+            <p class="mb-1">@Model.DeliveryMethod.ToDisplayName()</p>
+            <p class="mb-1 small">@Model.ShippingFullName &middot; @Model.ShippingPhone</p>
+            <p class="mb-1 small text-muted">@Model.FullDeliveryAddress</p>
+            @if (!string.IsNullOrWhiteSpace(Model.DeliveryNotes))
+            {
+                <p class="mb-0 small text-muted fst-italic">@Model.DeliveryNotes</p>
+            }
+        </div>
+    </div>
+    <div class="col-sm-6">
+        <div class="border rounded p-3 h-100">
+            <p class="fw-semibold mb-2"><i class="bi bi-credit-card"></i> Payment</p>
+            <p class="mb-1">@Model.PaymentMethod.ToDisplayName()</p>
+            @if (latestPayment != null)
+            {
+                <p class="mb-1"><span class="badge badge-status-@latestPayment.Status.ToString().ToLower()">@latestPayment.Status</span></p>
+                @if (latestPayment.Provider.HasValue)
+                {
+                    <p class="mb-0 small text-muted">@latestPayment.Provider.Value.ToDisplayName() &middot; @latestPayment.PayerPhone<br />Txn: @latestPayment.TransactionReference</p>
+                }
+            }
+        </div>
+    </div>
+</div>

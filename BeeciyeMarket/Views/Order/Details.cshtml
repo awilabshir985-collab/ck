@@ -18,16 +18,14 @@
 </ul>
 
 <div class="col-md-6">
+    <div class="d-flex justify-content-between">
+        <span>Delivery (@Model.DeliveryMethod.ToDisplayName())</span>
+        <span>@(Model.DeliveryFee == 0 ? "Free" : "$" + Model.DeliveryFee.ToString("0.00"))</span>
+    </div>
     <div class="d-flex justify-content-between fw-bold mb-3">
         <span>Total</span>
         <span>$@Model.TotalPrice.ToString("0.00")</span>
     </div>
-    <p class="mb-1"><strong>Name:</strong> @Model.ShippingFullName</p>
-    <p class="mb-1"><strong>Phone:</strong> @Model.ShippingPhone</p>
-    <p><strong>Address:</strong> @Model.ShippingAddress</p>
-    @{
-        var latestPayment = Model.Payments.OrderByDescending(p => p.PaymentDate).FirstOrDefault();
-    }
-    <p><strong>Payment method:</strong> @Model.PaymentMethod.ToDisplayName() @(latestPayment != null ? $"({latestPayment.Status})" : "")</p>
+    <partial name="_OrderDeliveryPayment" model="Model" />
     <a asp-controller="Order" asp-action="Index" class="btn btn-link">Back to My Orders</a>
 </div>

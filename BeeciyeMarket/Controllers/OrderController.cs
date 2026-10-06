@@ -37,14 +37,7 @@ namespace BeeciyeMarket.Controllers
                 return RedirectToAction("Index", "Cart");
             }
 
-            var user = await _userManager.GetUserAsync(User);
-            var model = new CheckoutViewModel
-            {
-                Items = items,
-                ShippingFullName = user?.FullName ?? string.Empty,
-                ShippingPhone = user?.PhoneNumber ?? string.Empty,
-                ShippingAddress = user?.Address ?? string.Empty
-            };
+            var model = await NewCheckoutModelAsync(items);
 
             ViewBag.ActiveNav = "Cart";
             return View(model);
@@ -65,13 +58,104 @@ namespace BeeciyeMarket.Controllers
                 return RedirectToAction("Index", "Cart");
             }
 
-            if (!ModelState.IsValid)
+            model.Items = cartItems;
+            model.BuyNowProductId = null;
+
+            var order = await PlaceOrderAsync(model, userId);
+            if (order == null)
             {
-                model.Items = cartItems;
+                ViewBag.ActiveNav = "Cart";
                 return View(model);
             }
 
-            foreach (var item in cartItems)
+            _context.CartItems.RemoveRange(cartItems);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Confirmation), new { id = order.Id });
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> BuyNow(int productId, int quantity = 1)
+        {
+            var product = await _context.Products.FindAsync(productId);
+            if (product == null || !product.IsActive || product.Quantity < 1)
+            {
+                return NotFound();
+            }
+
+            quantity = Math.Max(1, Math.Min(quantity, product.Quantity));
+
+            var model = await NewCheckoutModelAsync(new List<CartItem>
+            {
+                new CartItem { ProductId = product.Id, Product = product, Quantity = quantity }
+            });
+            model.BuyNowProductId = product.Id;
+            model.BuyNowQuantity = quantity;
+
+            ViewBag.ActiveNav = "Browse";
+            return View(nameof(Checkout), model);
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> BuyNow(CheckoutViewModel model)
+        {
+            var product = model.BuyNowProductId.HasValue
+                ? await _context.Products.FindAsync(model.BuyNowProductId.Value)
+                : null;
+            if (product == null || !product.IsActive || product.Quantity < 1)
+            {
+                return NotFound();
+            }
+
+            model.BuyNowQuantity = Math.Max(1, model.BuyNowQuantity);
+            model.Items = new List<CartItem>
+            {
+                new CartItem { ProductId = product.Id, Product = product, Quantity = model.BuyNowQuantity }
+            };
+
+            var userId = _userManager.GetUserId(User);
+            var order = await PlaceOrderAsync(model, userId);
+            if (order == null)
+            {
+                ViewBag.ActiveNav = "Browse";
+                return View(nameof(Checkout), model);
+            }
+
+            if (userId == null)
+            {
+                // Lets the guest see their own confirmation page, and only that one
+                TempData["GuestOrderId"] = order.Id.ToString();
+            }
+
+            return RedirectToAction(nameof(Confirmation), new { id = order.Id });
+        }
+
+        private async Task<CheckoutViewModel> NewCheckoutModelAsync(List<CartItem> items)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            return new CheckoutViewModel
+            {
+                Items = items,
+                ShippingFullName = user?.FullName ?? string.Empty,
+                ShippingPhone = user?.PhoneNumber ?? string.Empty,
+                ShippingCity = user?.City,
+                ShippingAddress = user?.Address
+            };
+        }
+
+        // Validates stock, creates the order with its delivery details and payment record.
+        // Returns null (with ModelState errors) when the order can't be placed.
+        private async Task<Order?> PlaceOrderAsync(CheckoutViewModel model, string? userId)
+        {
+            if (!ModelState.IsValid)
+            {
+                return null;
+            }
+
+            foreach (var item in model.Items)
             {
                 if (item.Product == null || item.Quantity > item.Product.Quantity)
                 {
@@ -81,10 +165,10 @@ namespace BeeciyeMarket.Controllers
 
             if (!ModelState.IsValid)
             {
-                model.Items = cartItems;
-                return View(model);
+                return null;
             }
 
+            var isPickup = model.DeliveryMethod == DeliveryMethod.Pickup;
             var order = new Order
             {
                 CustomerId = userId,
@@ -92,12 +176,17 @@ namespace BeeciyeMarket.Controllers
                 Status = OrderStatus.Pending,
                 ShippingFullName = model.ShippingFullName,
                 ShippingPhone = model.ShippingPhone,
-                ShippingAddress = model.ShippingAddress,
+                DeliveryMethod = model.DeliveryMethod,
+                DeliveryFee = model.DeliveryFee,
+                ShippingCity = isPickup ? null : model.ShippingCity,
+                ShippingDistrict = isPickup ? null : model.ShippingDistrict,
+                ShippingAddress = isPickup ? string.Empty : model.ShippingAddress ?? string.Empty,
+                DeliveryNotes = model.DeliveryNotes,
                 PaymentMethod = model.PaymentMethod,
-                TotalPrice = cartItems.Sum(i => i.Product!.UnitPrice * i.Quantity)
+                TotalPrice = model.Total
             };
 
-            foreach (var item in cartItems)
+            foreach (var item in model.Items)
             {
                 order.OrderItems.Add(new OrderItem
                 {
@@ -115,100 +204,24 @@ namespace BeeciyeMarket.Controllers
                 }
             }
 
-            _context.Orders.Add(order);
-            _context.CartItems.RemoveRange(cartItems);
-            await _context.SaveChangesAsync();
-
+            var isMobileMoney = model.PaymentMethod == PaymentMethod.MobileMoney;
             order.Payments.Add(new Payment
             {
-                OrderId = order.Id,
                 Amount = order.TotalPrice,
                 PaymentMethod = order.PaymentMethod,
                 PaymentDate = DateTime.Now,
-                Status = order.PaymentMethod == PaymentMethod.CashOnDelivery ? PaymentStatus.Pending : PaymentStatus.Paid
+                Status = isMobileMoney ? PaymentStatus.Paid : PaymentStatus.Pending,
+                Provider = isMobileMoney ? model.Provider : null,
+                PayerPhone = isMobileMoney ? model.PayerPhone : null,
+                TransactionReference = isMobileMoney ? model.TransactionReference?.Trim() : null
             });
-            await _context.SaveChangesAsync();
-
-            await _notifications.NotifyOrderPlacedAsync(order.Id);
-
-            return RedirectToAction(nameof(Confirmation), new { id = order.Id });
-        }
-
-        [HttpPost]
-        [AllowAnonymous]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> BuyNow(int productId, int quantity = 1, string? guestName = null, string? guestPhone = null, string? guestAddress = null)
-        {
-            var product = await _context.Products.FindAsync(productId);
-            if (product == null || !product.IsActive || product.Quantity < 1)
-            {
-                return NotFound();
-            }
-
-            quantity = Math.Max(1, Math.Min(quantity, product.Quantity));
-
-            var isAuthenticated = User.Identity?.IsAuthenticated == true;
-
-            if (!isAuthenticated)
-            {
-                if (string.IsNullOrWhiteSpace(guestName) || string.IsNullOrWhiteSpace(guestPhone) || string.IsNullOrWhiteSpace(guestAddress))
-                {
-                    ModelState.AddModelError(string.Empty, "Please provide your name, phone number and address to complete the purchase.");
-                    return RedirectToAction("Details", "Product", new { id = productId });
-                }
-            }
-
-            string? userId = null;
-            ApplicationUser? user = null;
-            if (isAuthenticated)
-            {
-                userId = _userManager.GetUserId(User)!;
-                user = await _userManager.GetUserAsync(User);
-            }
-
-            var order = new Order
-            {
-                CustomerId = userId,
-                OrderDate = DateTime.Now,
-                Status = OrderStatus.Pending,
-                ShippingFullName = isAuthenticated ? (user?.FullName ?? string.Empty) : guestName!,
-                ShippingPhone = isAuthenticated ? (user?.PhoneNumber ?? string.Empty) : guestPhone!,
-                ShippingAddress = isAuthenticated ? (user?.Address ?? user?.City ?? string.Empty) : guestAddress!,
-                PaymentMethod = PaymentMethod.CashOnDelivery,
-                TotalPrice = product.UnitPrice * quantity
-            };
-
-            order.OrderItems.Add(new OrderItem
-            {
-                ProductId = product.Id,
-                SellerId = product.SellerId,
-                Quantity = quantity,
-                UnitPrice = product.UnitPrice,
-                TotalPrice = product.UnitPrice * quantity
-            });
-
-            product.Quantity -= quantity;
-            if (product.Quantity <= 0)
-            {
-                product.IsActive = false;
-            }
 
             _context.Orders.Add(order);
             await _context.SaveChangesAsync();
 
-            order.Payments.Add(new Payment
-            {
-                OrderId = order.Id,
-                Amount = order.TotalPrice,
-                PaymentMethod = order.PaymentMethod,
-                PaymentDate = DateTime.Now,
-                Status = PaymentStatus.Pending
-            });
-            await _context.SaveChangesAsync();
-
             await _notifications.NotifyOrderPlacedAsync(order.Id);
 
-            return RedirectToAction(nameof(Confirmation), new { id = order.Id });
+            return order;
         }
 
         [HttpGet]
@@ -216,6 +229,11 @@ namespace BeeciyeMarket.Controllers
         public async Task<IActionResult> Confirmation(int id)
         {
             var userId = _userManager.GetUserId(User);
+            if (userId == null && TempData.Peek("GuestOrderId") as string != id.ToString())
+            {
+                return NotFound();
+            }
+
             var order = await _context.Orders
                 .Include(o => o.OrderItems).ThenInclude(oi => oi.Product)
                 .Include(o => o.Payments)
