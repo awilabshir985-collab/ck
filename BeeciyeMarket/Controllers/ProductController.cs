@@ -34,7 +34,7 @@ namespace BeeciyeMarket.Controllers
             var query = _context.Products
                 .Include(p => p.Category)
                 .Include(p => p.Seller)
-                .Where(p => p.IsActive && !p.IsDeleted)
+                .Where(p => p.IsActive && !p.IsDeleted && p.Quantity > 0)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(search))
@@ -85,6 +85,15 @@ namespace BeeciyeMarket.Controllers
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (product == null)
+            {
+                return NotFound();
+            }
+
+            // Sold, deactivated or deleted products are hidden from everyone except their seller and admins
+            var isAvailable = product.IsActive && !product.IsDeleted && product.Quantity > 0;
+            var canSeeHidden = User.IsInRole(Roles.Admin)
+                || (product.SellerId != null && product.SellerId == _userManager.GetUserId(User));
+            if (!isAvailable && !canSeeHidden)
             {
                 return NotFound();
             }

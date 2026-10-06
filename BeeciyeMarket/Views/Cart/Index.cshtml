@@ -6,6 +6,11 @@
 
 <h1 class="mb-4">Your Cart</h1>
 
+@if (ViewBag.RemovedNotice != null)
+{
+    <div class="alert alert-warning">@ViewBag.RemovedNotice</div>
+}
+
 @if (!Model.Items.Any())
 {
     <p class="text-muted">Your cart is empty.</p>

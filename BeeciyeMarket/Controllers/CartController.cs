@@ -29,6 +29,18 @@ namespace BeeciyeMarket.Controllers
                 .OrderByDescending(c => c.DateAdded)
                 .ToListAsync();
 
+            // Drop items that were sold, deactivated or deleted since they were added
+            var unavailable = items.Where(c => c.Product == null || !c.Product.IsActive || c.Product.IsDeleted || c.Product.Quantity < 1).ToList();
+            if (unavailable.Any())
+            {
+                _context.CartItems.RemoveRange(unavailable);
+                await _context.SaveChangesAsync();
+                items = items.Except(unavailable).ToList();
+                ViewBag.RemovedNotice = unavailable.Count == 1
+                    ? $"'{unavailable[0].Product?.Name}' was removed from your cart because it is no longer available."
+                    : $"{unavailable.Count} items were removed from your cart because they are no longer available.";
+            }
+
             ViewBag.ActiveNav = "Cart";
             return View(new CartViewModel { Items = items });
         }
@@ -38,7 +50,7 @@ namespace BeeciyeMarket.Controllers
         public async Task<IActionResult> Add(int productId, int quantity = 1)
         {
             var product = await _context.Products.FindAsync(productId);
-            if (product == null || !product.IsActive)
+            if (product == null || !product.IsActive || product.IsDeleted || product.Quantity < 1)
             {
                 return NotFound();
             }

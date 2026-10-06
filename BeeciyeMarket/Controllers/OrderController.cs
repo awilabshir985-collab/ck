@@ -217,6 +217,15 @@ namespace BeeciyeMarket.Controllers
             });
 
             _context.Orders.Add(order);
+
+            // Sold-out products must disappear from every shopper's cart, not just the buyer's
+            var soldOutIds = model.Items.Where(i => i.Product!.Quantity <= 0).Select(i => i.ProductId).ToList();
+            if (soldOutIds.Any())
+            {
+                _context.CartItems.RemoveRange(
+                    await _context.CartItems.Where(c => soldOutIds.Contains(c.ProductId)).ToListAsync());
+            }
+
             await _context.SaveChangesAsync();
 
             await _notifications.NotifyOrderPlacedAsync(order.Id);

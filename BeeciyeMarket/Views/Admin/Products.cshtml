@@ -31,7 +31,16 @@
                     <td>@(product.Seller?.FullName ?? product.GuestName) @(product.Seller == null ? "(Guest)" : "")</td>
                     <td>@product.Category?.Name</td>
                     <td>$@product.CurrentValue.ToString("0.00")</td>
-                    <td><span class="badge @(product.IsActive ? "badge-status-active" : "badge-status-inactive")">@(product.IsActive ? "Active" : "Inactive")</span></td>
+                    <td>
+                        @if (product.Quantity < 1)
+                        {
+                            <span class="badge badge-status-completed">Sold</span>
+                        }
+                        else
+                        {
+                            <span class="badge @(product.IsActive ? "badge-status-active" : "badge-status-inactive")">@(product.IsActive ? "Active" : "Inactive")</span>
+                        }
+                    </td>
                     <td class="d-flex gap-1">
                         <a asp-controller="Admin" asp-action="EditProduct" asp-route-id="@product.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
                         <form asp-controller="Admin" asp-action="ToggleProductActive" asp-route-id="@product.Id" method="post" class="d-inline">

@@ -36,7 +36,16 @@ else
                     <td>@product.Category?.Name</td>
                     <td>$@product.CurrentValue.ToString("0.00")</td>
                     <td>@product.Quantity</td>
-                    <td><span class="badge @(product.IsActive ? "badge-status-active" : "badge-status-inactive")">@(product.IsActive ? "Active" : "Inactive")</span></td>
+                    <td>
+                        @if (product.Quantity < 1)
+                        {
+                            <span class="badge badge-status-completed">Sold</span>
+                        }
+                        else
+                        {
+                            <span class="badge @(product.IsActive ? "badge-status-active" : "badge-status-inactive")">@(product.IsActive ? "Active" : "Inactive")</span>
+                        }
+                    </td>
                     <td class="text-end">
                         <a asp-controller="Product" asp-action="Edit" asp-route-id="@product.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
                         <form asp-controller="Product" asp-action="Delete" asp-route-id="@product.Id" method="post" class="d-inline" onsubmit="return confirm('Delete this product?');">
